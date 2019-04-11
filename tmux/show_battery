@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+
+# battery symbols
+BATTERY_SYMOBL='█'
+BORDER='■'
+
+# foreground colors
+GREEN='#[fg=green]'
+RED='#[fg=red]'
+WHITE='#[fg=white]'
+
+# bright foreground
+BRRED='#[fg=brightred]'
+
+# background colors
+BGREEN='#[bg=green]'
+BRED='#[bg=red]'
+BWHITE='#[bg=white]'
+
+status_acpi() {
+  STATUS_FULL=$(acpi -b)
+  PERCENTAGE=$(cut -d , -f 2 <<< ${STATUS_FULL} | cut -d % -f 1)
+  TIME=$(cut -d , -f 3 <<< ${STATUS_FULL} | cut -d ' ' -f 2)
+  STATE=$(cut -d , -f 1 <<< ${STATUS_FULL} | cut -d ' ' -f 3 | cut -c1-2)
+  RSTATE=1
+  if [[ "${STATE}" == "Ch" ]]; then
+    RSTATE=0
+  fi
+  echo "${PERCENTAGE}" "${RSTATE}" "${TIME}"
+}
+
+status_pmset() {
+  STATUS_FULL=$(pmset -g batt | tail -1)
+  PERCENTAGE=$(cut -d ' ' -f 3 <<< ${STATUS_FULL} | cut -d % -f 1)
+  TIME=$(cut -d ';' -f 3 <<< ${STATUS_FULL} | cut -d ' ' -f 1)
+  STATE=$(cut -d ';' -f 2 <<< ${STATUS_FULL})
+  RSTATE=1
+  if [[ "${STATE}" == "AC attached" ]]; then
+    RSTATE=0
+  fi
+  echo "${PERCENTAGE}" "${RSTATE}" "${TIME}"
+}
+
+battery_status() {
+  PERCENTAGE=${1:--1}
+  STATE=${2:--1}
+  TIME=${3:--1}
+
+  CELL_LEFT=$(( ${PERCENTAGE} / 20 ))
+  CELL_RIGHT=$(( 5 - ${CELL_LEFT} ))
+
+  if [[ "${STATE}" -eq "0" ]] ; then
+    STATE="Ch"
+  else
+    STATE="Di"
+  fi
+
+  if [[ "${CELL_LEFT}" -eq 0 ]]; then
+    CELL_LEFT=1
+    CELL_RIGHT=4
+  fi
+
+  LEFT="${GREEN}"
+  if [[ "${PERCENTAGE}" -le 20 ]]; then
+    LEFT="${RED}"
+  fi
+
+  if [[ "${PERCENTAGE}" -le 10 ]]; then
+    CELL_LEFT=0
+    CELL_RIGHT=5
+  fi
+
+  for i in $(seq ${CELL_LEFT}); do
+    LEFT="${LEFT}${BATTERY_SYMOBL}"
+  done
+  RIGHT="${WHITE}"
+  if [ ${PERCENTAGE} -le 10 ]; then
+    RIGHT="${BRRED}"
+  fi
+  for i in $(seq ${CELL_RIGHT}); do
+    RIGHT="${RIGHT}${BATTERY_SYMOBL}"
+  done
+  RIGHT="${RIGHT}${WHITE}"
+  printf "${WHITE}${STATE} ${LEFT}${RIGHT}${BORDER}${PERCENTAGE}%% ${TIME}"
+}
+
+battery_status $(status_acpi)

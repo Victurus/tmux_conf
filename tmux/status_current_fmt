@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+CURRENT=${1}
+MAX_WINDOWS=${2}
+FIRST=${3:-1}
+
+if [ ${MAX_WINDOWS} -eq 1 ]; then
+	printf "#[fg=white,bg=black] #I:#W "
+elif [ ${CURRENT} -le ${FIRST} ]; then
+	printf "#[fg=white,bg=black] #I:#W #[fg=white]▀"
+elif [ ${CURRENT} -eq ${MAX_WINDOWS} ]; then
+	printf "#[bg=black,fg=white]▄#[fg=white] #I:#W "
+else
+	printf "#[bg=black,fg=white]▄#[fg=white] #I:#W #[fg=white]▀"
+fi
