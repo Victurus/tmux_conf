@@ -32,11 +32,12 @@ status_acpi() {
 status_pmset() {
   STATUS_FULL=$(pmset -g batt | tail -1)
   PERCENTAGE=$(cut -d ' ' -f 3 <<< ${STATUS_FULL} | cut -d % -f 1)
-  TIME=$(cut -d ';' -f 3 <<< ${STATUS_FULL} | cut -d ' ' -f 1)
+  TIME=$(cut -d ';' -f 3 <<< ${STATUS_FULL} | cut -d ' ' -f 2)
   STATE=$(cut -d ';' -f 2 <<< ${STATUS_FULL})
-  RSTATE=1
-  if [[ "${STATE}" == "AC attached" ]]; then
-    RSTATE=0
+  RSTATE=0
+  PATTERN_STATE="*dis*"
+  if [[ "${STATE}" == ${PATTERN_STATE} ]]; then
+    RSTATE=1
   fi
   echo "${PERCENTAGE}" "${RSTATE}" "${TIME}"
 }
@@ -84,4 +85,14 @@ battery_status() {
   printf "${WHITE}${STATE} ${LEFT}${RIGHT}${BORDER}${PERCENTAGE}%% ${TIME}"
 }
 
-battery_status $(status_acpi)
+case "$(uname -v)" in
+  *Darwin*) 
+    battery_status $(status_pmset)
+    ;;
+  *Debian*|*Ubuntu*)
+    battery_status $(status_acpi)
+    ;;
+  *)
+    echo "unrecognized"
+    ;;
+esac
